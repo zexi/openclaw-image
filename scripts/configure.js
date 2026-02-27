@@ -210,7 +210,7 @@ if (process.env.MOONSHOT_API_KEY) {
   config.models.providers.moonshot = {
     api: "openai-completions",
     apiKey: process.env.MOONSHOT_API_KEY,
-    baseUrl: (process.env.MOONSHOT_BASE_URL || "https://api.moonshot.ai/v1").replace(/\/+$/, ""),
+    baseUrl: (process.env.MOONSHOT_BASE_URL || "https://api.moonshot.cn/v1").replace(/\/+$/, ""),
     models: [
       { id: "kimi-k2.5", name: "Kimi K2.5", contextWindow: 128000 },
     ],

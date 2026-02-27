@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OpenClaw UI
+Comment=Open OpenClaw control UI after XFCE desktop is ready
+Exec=/usr/local/bin/openclaw-open-browser.sh
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true
+NoDisplay=false
+

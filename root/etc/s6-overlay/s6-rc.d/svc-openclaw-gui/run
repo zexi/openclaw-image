@@ -1,0 +1,20 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+echo "[svc-openclaw-gui] waiting for desktop (/de-pid)..."
+
+# svc-de 在启动 DE 后会写 /de-pid（X / Wayland 均如此）
+for i in $(seq 1 300); do
+  if [ -s /de-pid ]; then
+    break
+  fi
+  sleep 0.5
+done
+
+if [ ! -s /de-pid ]; then
+  echo "[svc-openclaw-gui] WARNING: desktop not ready after timeout, continuing anyway"
+fi
+
+echo "[svc-openclaw-gui] starting /app/scripts/entrypoint-gui.sh"
+exec /app/scripts/entrypoint-gui.sh
+

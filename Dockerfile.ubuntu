@@ -1,0 +1,20 @@
+ARG BASE_IMAGE=registry.cn-beijing.aliyuncs.com/zexi/openclaw-base:ubu-v2026.3.2-20260303.0
+
+FROM ${BASE_IMAGE}
+
+# Remove default nginx site
+# RUN rm -f /etc/nginx/sites-enabled/default
+
+COPY scripts/ /app/scripts/
+RUN chmod +x /app/scripts/*.sh
+
+# 安装基于 s6-rc 的 openclaw GUI 服务定义和 XFCE 自动打开浏览器脚本
+COPY root/ /
+RUN chmod +x /etc/s6-overlay/s6-rc.d/svc-openclaw-gui/run \
+  && chmod +x /usr/local/bin/openclaw-open-browser.sh || true
+
+ENV PORT=8080
+EXPOSE 8080
+
+# 需要在桌面启动的时候调用这个脚本
+# ENTRYPOINT ["/app/scripts/entrypoint.sh"] 

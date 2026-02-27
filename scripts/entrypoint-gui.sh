@@ -1,58 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-STATE_DIR="${OPENCLAW_STATE_DIR:-/data/.openclaw}"
-WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-/data/workspace}"
+STATE_DIR="${OPENCLAW_STATE_DIR:-/config/.openclaw}"
+WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-/config/workspace}"
 GATEWAY_PORT="${OPENCLAW_GATEWAY_PORT:-18789}"
 
 echo "[entrypoint] state dir: $STATE_DIR"
 echo "[entrypoint] workspace dir: $WORKSPACE_DIR"
-
-# ── Setup Persistent Storage for Tools ────────────────────────────────────────
-
-echo "[entrypoint] setting up persistent tool storage in /data..."
-mkdir -p "$NPM_CONFIG_PREFIX/bin" "$UV_TOOL_DIR/bin" "$UV_CACHE_DIR" "$GOPATH/bin"
-
-# Linuxbrew persistence and symlinking
-BREW_PERSIST_DIR="/data/linuxbrew"
-if [ ! -d "$BREW_PERSIST_DIR" ]; then
-    echo "[entrypoint] Initializing persistent linuxbrew storage..."
-    mkdir -p "$BREW_PERSIST_DIR"
-    if [ -d "/home/linuxbrew/.linuxbrew" ] && [ ! -L "/home/linuxbrew/.linuxbrew" ]; then
-        cp -a /home/linuxbrew/.linuxbrew/* "$BREW_PERSIST_DIR/" || true
-        cp -a /home/linuxbrew/.linuxbrew/.[!.]* "$BREW_PERSIST_DIR/" 2>/dev/null || true
-    fi
-    chown -R linuxbrew:linuxbrew "$BREW_PERSIST_DIR"
-fi
-
-if [ ! -L "/home/linuxbrew/.linuxbrew" ]; then
-    rm -rf /home/linuxbrew/.linuxbrew
-    ln -s "$BREW_PERSIST_DIR" /home/linuxbrew/.linuxbrew
-    chown -h linuxbrew:linuxbrew /home/linuxbrew/.linuxbrew
-fi
-
-# Ensure tool paths survive login-shell PATH reset (/etc/profile overwrites PATH)
-cat << 'EOF' > /etc/profile.d/custom-tools.sh
-export NPM_CONFIG_PREFIX="/data/npm-global"
-export UV_TOOL_DIR="/data/uv/tools"
-export UV_CACHE_DIR="/data/uv/cache"
-export GOPATH="/data/go"
-export PATH="/data/npm-global/bin:/data/uv/tools/bin:/data/go/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/go/bin:$PATH"
-EOF
-chmod +x /etc/profile.d/custom-tools.sh
-
-# Create a wrapper for brew to drop root privileges
-cat << 'EOF' > "$NPM_CONFIG_PREFIX/bin/brew"
-#!/bin/bash
-if [ "$(id -u)" = "0" ]; then
-    export HOME=/home/linuxbrew
-    export USER=linuxbrew
-    exec runuser -u linuxbrew -- /home/linuxbrew/.linuxbrew/bin/brew "$@"
-else
-    exec /home/linuxbrew/.linuxbrew/bin/brew "$@"
-fi
-EOF
-chmod +x "$NPM_CONFIG_PREFIX/bin/brew"
 
 # ── Install extra apt packages (if requested) ────────────────────────────────
 if [ -n "${OPENCLAW_DOCKER_APT_PACKAGES:-}" ]; then
@@ -97,6 +51,8 @@ fi
 mkdir -p "$STATE_DIR" "$WORKSPACE_DIR"
 mkdir -p "$STATE_DIR/agents/main/sessions" "$STATE_DIR/credentials"
 chmod 700 "$STATE_DIR"
+chown -R 1000:1000 "$STATE_DIR"
+chown -R 1000:1000 "$WORKSPACE_DIR"
 
 # Export state/workspace dirs so openclaw CLI + configure.js see them
 export OPENCLAW_STATE_DIR="$STATE_DIR"
@@ -296,29 +252,29 @@ server {
         internal;
     }
 
-    # Browser sidecar proxy (VNC web UI)
-    location /browser/ {
-        ${AUTH_BLOCK}
+    # # Browser sidecar proxy (VNC web UI)
+    # location /browser/ {
+    #     ${AUTH_BLOCK}
 
-        proxy_pass http://localhost:3000/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+    #     proxy_pass http://localhost:3000/;
+    #     proxy_set_header Host \$host;
+    #     proxy_set_header X-Real-IP \$remote_addr;
+    #     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    #     proxy_set_header X-Forwarded-Proto \$scheme;
 
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$connection_upgrade;
+    #     proxy_http_version 1.1;
+    #     proxy_set_header Upgrade \$http_upgrade;
+    #     proxy_set_header Connection \$connection_upgrade;
 
-        proxy_read_timeout 86400s;
-        proxy_send_timeout 86400s;
-    }
+    #     proxy_read_timeout 86400s;
+    #     proxy_send_timeout 86400s;
+    # }
 }
 NGINXEOF
 
 # ── Start nginx ──────────────────────────────────────────────────────────────
 echo "[entrypoint] starting nginx with HTTPS on port ${PORT:-8080}..."
-nginx
+nginx -s reload
 
 # ── Clean up stale lock files ────────────────────────────────────────────────
 rm -f /tmp/openclaw-gateway.lock 2>/dev/null || true
@@ -330,4 +286,4 @@ echo "[entrypoint] starting openclaw gateway on port $GATEWAY_PORT..."
 # cwd must be the app root so the gateway finds dist/control-ui/ assets
 # "gateway run" = foreground mode; all config comes from openclaw.json
 cd /opt/openclaw/app
-exec openclaw gateway run
+exec setpriv --clear-groups --reuid=1000 --regid=1000 -- openclaw gateway run
