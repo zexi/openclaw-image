@@ -570,6 +570,48 @@ if (process.env.WHATSAPP_ENABLED === "true" || process.env.WHATSAPP_ENABLED === 
   console.log("[configure] WhatsApp channel configured (from custom JSON)");
 }
 
+// Feishu / Lark (single account "main", env-only; complex groups/multi-account use OPENCLAW_CUSTOM_CONFIG)
+if (process.env.FEISHU_APP_ID && process.env.FEISHU_APP_SECRET) {
+  console.log("[configure] configuring Feishu channel (from env)");
+  ensure(config, "channels");
+  const feishu = config.channels.feishu = config.channels.feishu || {};
+  feishu.enabled = true;
+  ensure(feishu, "accounts", "main");
+  feishu.accounts.main.appId = process.env.FEISHU_APP_ID.trim();
+  feishu.accounts.main.appSecret = process.env.FEISHU_APP_SECRET.trim();
+  if (process.env.FEISHU_BOT_NAME) feishu.accounts.main.botName = process.env.FEISHU_BOT_NAME;
+
+  if (process.env.FEISHU_DOMAIN) feishu.domain = process.env.FEISHU_DOMAIN.trim();
+  if (process.env.FEISHU_DM_POLICY) feishu.dmPolicy = process.env.FEISHU_DM_POLICY;
+  if (process.env.FEISHU_GROUP_POLICY) feishu.groupPolicy = process.env.FEISHU_GROUP_POLICY;
+  if (process.env.FEISHU_ALLOW_FROM)
+    feishu.allowFrom = process.env.FEISHU_ALLOW_FROM.split(",").map(s => s.trim());
+  if (process.env.FEISHU_GROUP_ALLOW_FROM)
+    feishu.groupAllowFrom = process.env.FEISHU_GROUP_ALLOW_FROM.split(",").map(s => s.trim());
+  if (process.env.FEISHU_TEXT_CHUNK_LIMIT)
+    feishu.textChunkLimit = parseInt(process.env.FEISHU_TEXT_CHUNK_LIMIT, 10);
+  if (process.env.FEISHU_MEDIA_MAX_MB)
+    feishu.mediaMaxMb = parseInt(process.env.FEISHU_MEDIA_MAX_MB, 10);
+  if (process.env.FEISHU_TYPING_INDICATOR !== undefined)
+    feishu.typingIndicator = process.env.FEISHU_TYPING_INDICATOR !== "false";
+  if (process.env.FEISHU_RESOLVE_SENDER_NAMES !== undefined)
+    feishu.resolveSenderNames = process.env.FEISHU_RESOLVE_SENDER_NAMES !== "false";
+} else if (config.channels?.feishu) {
+  console.log("[configure] Feishu channel configured (from custom JSON)");
+}
+
+// QQBot
+if (process.env.QQBOT_APP_ID && process.env.QQBOT_CLIENT_SECRET) {
+  console.log("[configure] configuring QQBot channel (from env)");
+  ensure(config, "channels");
+  const qq = config.channels.qqbot = config.channels.qqbot || {};
+  qq.enabled = true;
+  qq.appId = process.env.QQBOT_APP_ID.trim();
+  qq.clientSecret = process.env.QQBOT_CLIENT_SECRET.trim();
+} else if (config.channels?.qqbot) {
+  console.log("[configure] QQBot channel configured (from custom JSON)");
+}
+
 // Clean up empty channels object (from previous config versions)
 if (config.channels && Object.keys(config.channels).length === 0) {
   delete config.channels;

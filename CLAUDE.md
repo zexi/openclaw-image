@@ -4,7 +4,7 @@
 
 Each channel in `scripts/configure.js` maps `CHANNEL_*` env vars → `channels.<name>.*` in `openclaw.json`.
 
-- **Telegram/Discord/Slack**: merge — `config.channels.X = config.channels.X || {}` (env vars override individual keys, custom JSON keys preserved)
+- **Telegram/Discord/Slack/Feishu**: merge — `config.channels.X = config.channels.X || {}` (env vars override individual keys, custom JSON keys preserved)
 - **WhatsApp**: full overwrite — `config.channels.whatsapp = {}` (env vars are authoritative, custom JSON whatsapp block is discarded when WHATSAPP_ENABLED=true)
 
 ### Telegram env vars (20 total)
@@ -50,6 +50,23 @@ Numbers: `SLACK_HISTORY_LIMIT`, `SLACK_TEXT_CHUNK_LIMIT`, `SLACK_MEDIA_MAX_MB`
 CSV→Array: `SLACK_DM_ALLOW_FROM` (user IDs/handles, always strings)
 
 Docs: https://docs.openclaw.ai/channels/slack
+
+### Feishu env vars (14 total)
+
+Gate: `FEISHU_APP_ID` + `FEISHU_APP_SECRET` (both required to activate). Single account `main` only via env; multi-account or complex `groups` use custom JSON.
+
+Strings: `FEISHU_APP_ID`, `FEISHU_APP_SECRET`, `FEISHU_BOT_NAME`, `FEISHU_DOMAIN` (feishu/lark), `FEISHU_DM_POLICY`, `FEISHU_GROUP_POLICY`
+Numbers: `FEISHU_TEXT_CHUNK_LIMIT`, `FEISHU_MEDIA_MAX_MB`
+Booleans: `FEISHU_TYPING_INDICATOR`, `FEISHU_RESOLVE_SENDER_NAMES`
+CSV→Array: `FEISHU_ALLOW_FROM` (Open IDs), `FEISHU_GROUP_ALLOW_FROM` (chat IDs e.g. oc_xxx)
+
+Docs: https://docs.openclaw.ai/channels/feishu
+
+### QQBot env vars (2 total)
+
+Gate: `QQBOT_APP_ID` + `QQBOT_CLIENT_SECRET` (both required to activate).
+
+Strings: `QQBOT_APP_ID`, `QQBOT_CLIENT_SECRET`
 
 ### Hooks env vars (3 total)
 

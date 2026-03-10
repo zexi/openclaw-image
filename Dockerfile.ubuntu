@@ -8,13 +8,18 @@ FROM ${BASE_IMAGE}
 COPY scripts/ /app/scripts/
 RUN chmod +x /app/scripts/*.sh
 
+# 使用 npm 安装 @sliverp/qqbot 插件到 /opt/extensions/qqbot
+RUN mkdir -p /opt/extensions \
+  && cd /opt/extensions \
+  && npm init -y \
+  && npm install @sliverp/qqbot@1.5.4 \
+  && mv node_modules/@sliverp/qqbot qqbot \
+  && rm -rf node_modules package.json package-lock.json
+
 # 安装基于 s6-rc 的 openclaw GUI 服务定义和 XFCE 自动打开浏览器脚本
 COPY root/ /
 RUN chmod +x /etc/s6-overlay/s6-rc.d/svc-openclaw-gui/run \
   && chmod +x /usr/local/bin/openclaw-open-browser.sh || true
-
-ENV PORT=8080
-EXPOSE 8080
 
 # 需要在桌面启动的时候调用这个脚本
 # ENTRYPOINT ["/app/scripts/entrypoint.sh"] 

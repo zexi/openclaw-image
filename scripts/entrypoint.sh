@@ -130,6 +130,25 @@ echo "[entrypoint] running openclaw doctor --fix..."
 cd /opt/openclaw/app
 openclaw doctor --fix 2>&1 || true
 
+# ── Workspace templates: AGENTS.md, SOUL.md, USER.md (only if missing) ───────
+write_workspace_template() {
+  local name="$1" plain_var="$2" b64_var="$3"
+  local dest="${WORKSPACE_DIR}/${name}"
+  [ -f "$dest" ] && return
+  local content
+  if [ -n "${b64_var:-}" ]; then
+    content="$(printf '%s' "${!b64_var}" | base64 -d 2>/dev/null)" && [ -n "$content" ] && printf '%s' "$content" > "$dest"
+  elif [ -n "${plain_var:-}" ]; then
+    printf '%s' "${!plain_var}" > "$dest"
+  else
+    return
+  fi
+  [ -f "$dest" ] && chmod 0644 "$dest" && echo "[entrypoint] wrote workspace template: $name"
+}
+write_workspace_template "AGENTS.md" "OPENCLAW_TEMPLATE_AGENTS_MD" "OPENCLAW_TEMPLATE_AGENTS_MD_B64"
+write_workspace_template "SOUL.md"  "OPENCLAW_TEMPLATE_SOUL_MD"  "OPENCLAW_TEMPLATE_SOUL_MD_B64"
+write_workspace_template "USER.md"  "OPENCLAW_TEMPLATE_USER_MD"  "OPENCLAW_TEMPLATE_USER_MD_B64"
+
 # ── Read hooks path from generated config (if hooks enabled) ─────────────────
 HOOKS_PATH=""
 HOOKS_PATH=$(node -e "

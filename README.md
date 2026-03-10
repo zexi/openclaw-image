@@ -263,6 +263,18 @@ Mount a persistent volume at the sidecar's profile directory (`/home/kasm-user`)
 | `DISCORD_ACTIONS_EVENTS` | `true` | Gate event management. |
 | `DISCORD_ACTIONS_ROLES` | `false` | Gate role add/remove. |
 | `DISCORD_ACTIONS_MODERATION` | `false` | Gate timeout/kick/ban. |
+| `FEISHU_APP_ID` | | Feishu/Lark app ID (e.g. `cli_xxx`). Both app ID and secret required to enable. |
+| `FEISHU_APP_SECRET` | | Feishu/Lark app secret. |
+| `FEISHU_BOT_NAME` | | Bot display name for the main account. |
+| `FEISHU_DOMAIN` | `feishu` | API domain: `feishu` (default) or `lark` for international tenants. |
+| `FEISHU_DM_POLICY` | `pairing` | DM access policy: `pairing`, `allowlist`, `open`, or `disabled`. |
+| `FEISHU_GROUP_POLICY` | `open` | Group policy: `open`, `allowlist`, or `disabled`. |
+| `FEISHU_ALLOW_FROM` | | Comma-separated Open IDs for DM allowlist. |
+| `FEISHU_GROUP_ALLOW_FROM` | | Comma-separated group chat IDs (e.g. `oc_xxx`) for allowlist. |
+| `FEISHU_TEXT_CHUNK_LIMIT` | `2000` | Outbound text chunk size (chars). |
+| `FEISHU_MEDIA_MAX_MB` | `30` | Media upload/download limit in MB. |
+| `FEISHU_TYPING_INDICATOR` | `true` | Show typing indicator while generating. |
+| `FEISHU_RESOLVE_SENDER_NAMES` | `true` | Resolve sender display names (extra API calls). |
 | `SLACK_BOT_TOKEN` | | Slack bot token (`xoxb-...`). Both bot + app token required for Slack. |
 | `SLACK_APP_TOKEN` | | Slack app token (`xapp-...`). |
 | `SLACK_USER_TOKEN` | | Slack user token (`xoxp-...`). Optional, for user-level API calls. |
@@ -300,8 +312,30 @@ Mount a persistent volume at the sidecar's profile directory (`/home/kasm-user`)
 | `WHATSAPP_ACK_REACTION_GROUP` | `mentions` | Group reaction behavior: `always`, `mentions`, or `never`. |
 | `WHATSAPP_MESSAGE_PREFIX` | | Inbound message prefix. |
 | `WHATSAPP_ACTIONS_REACTIONS` | `true` | Enable WhatsApp tool reactions. |
+| `QQBOT_APP_ID` | | QQBot app ID. Set with `QQBOT_CLIENT_SECRET` to enable QQBot channel. |
+| `QQBOT_CLIENT_SECRET` | | QQBot client secret. Set with `QQBOT_APP_ID` to enable QQBot channel. |
 
 If a channel env var is removed, that channel is cleaned from config on next start. WhatsApp env vars fully overwrite any existing WhatsApp config (no merge with custom JSON).
+
+### Workspace templates (optional)
+
+At startup, the entrypoint writes `AGENTS.md`, `SOUL.md`, and `USER.md` into `OPENCLAW_WORKSPACE_DIR` **only when each file is missing** (existing files are never overwritten). Use this to seed a default workspace for new instances.
+
+| Variable | Description |
+|---|---|
+| `OPENCLAW_TEMPLATE_AGENTS_MD` | Plain text content for `AGENTS.md`. |
+| `OPENCLAW_TEMPLATE_AGENTS_MD_B64` | Base64-encoded content for `AGENTS.md` (preferred for multiline; avoids escaping in compose). |
+| `OPENCLAW_TEMPLATE_SOUL_MD` | Plain text content for `SOUL.md`. |
+| `OPENCLAW_TEMPLATE_SOUL_MD_B64` | Base64-encoded content for `SOUL.md`. |
+| `OPENCLAW_TEMPLATE_USER_MD` | Plain text content for `USER.md`. |
+| `OPENCLAW_TEMPLATE_USER_MD_B64` | Base64-encoded content for `USER.md`. |
+
+For each file, if a `_B64` env var is set it is decoded and written; otherwise the non-B64 var is used. Example with base64 (e.g. in docker-compose):
+
+```bash
+# Encode once: echo -n "Your AGENTS.md content here" | base64
+OPENCLAW_TEMPLATE_AGENTS_MD_B64=WW91ciBBR0VOVFMubWQgY29udGVudCBoZXJl
+```
 
 ### Provider overrides (optional)
 

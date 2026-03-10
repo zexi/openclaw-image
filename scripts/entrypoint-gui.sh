@@ -51,8 +51,18 @@ fi
 mkdir -p "$STATE_DIR" "$WORKSPACE_DIR"
 mkdir -p "$STATE_DIR/agents/main/sessions" "$STATE_DIR/credentials"
 chmod 700 "$STATE_DIR"
-chown -R 1000:1000 "$STATE_DIR"
-chown -R 1000:1000 "$WORKSPACE_DIR"
+
+# 合并镜像内预装插件到持久化 state（首次启动时；不覆盖已有 plugins）
+if [ -d /opt/extensions ]; then
+  echo "[entrypoint] copying preinstalled extensions into state dir $STATE_DIR/extensions"
+  mkdir -p "$STATE_DIR/extensions"
+  cp -a /opt/extensions/* "$STATE_DIR/extensions/"
+  chown -R 1000:1000 "$STATE_DIR/extensions"
+  echo "[entrypoint] merged preinstalled extensions into state dir"
+else
+  echo "[entrypoint] no preinstalled extensions found in /opt/extensions"
+  ls -lah /opt/extensions
+fi
 
 # Export state/workspace dirs so openclaw CLI + configure.js see them
 export OPENCLAW_STATE_DIR="$STATE_DIR"
@@ -85,6 +95,27 @@ chmod 600 "$STATE_DIR/openclaw.json"
 echo "[entrypoint] running openclaw doctor --fix..."
 cd /opt/openclaw/app
 openclaw doctor --fix 2>&1 || true
+
+# ── Workspace templates: AGENTS.md, SOUL.md, USER.md (only if missing) ───────
+write_workspace_template() {
+  local name="$1" plain_var="$2" b64_var="$3"
+  local dest="${WORKSPACE_DIR}/${name}"
+  [ -f "$dest" ] && return
+  local content
+  # Prefer B64 var when it has a value; fall back to plain var.
+  if [ -n "${!b64_var:-}" ]; then
+    content="$(printf '%s' "${!b64_var}" | base64 -d 2>/dev/null || true)"
+    [ -n "$content" ] && printf '%s' "$content" > "$dest"
+  elif [ -n "${!plain_var:-}" ]; then
+    printf '%s' "${!plain_var}" > "$dest"
+  else
+    return
+  fi
+  [ -f "$dest" ] && chmod 0644 "$dest" && chown 1000:1000 "$dest" && echo "[entrypoint] wrote workspace template: $name"
+}
+#write_workspace_template "AGENTS.md" "OPENCLAW_TEMPLATE_AGENTS_MD" "OPENCLAW_TEMPLATE_AGENTS_MD_B64"
+#write_workspace_template "SOUL.md"  "OPENCLAW_TEMPLATE_SOUL_MD"  "OPENCLAW_TEMPLATE_SOUL_MD_B64"
+#write_workspace_template "USER.md"  "OPENCLAW_TEMPLATE_USER_MD"  "OPENCLAW_TEMPLATE_USER_MD_B64"
 
 # ── Read hooks path from generated config (if hooks enabled) ─────────────────
 HOOKS_PATH=""
@@ -282,6 +313,10 @@ rm -f "$STATE_DIR/gateway.lock" 2>/dev/null || true
 
 # ── Start openclaw gateway ───────────────────────────────────────────────────
 echo "[entrypoint] starting openclaw gateway on port $GATEWAY_PORT..."
+
+echo "[entrypoint] setting ownership of state and workspace directories..."
+chown -R 1000:1000 "$STATE_DIR"
+chown -R 1000:1000 "$WORKSPACE_DIR"
 
 # cwd must be the app root so the gateway finds dist/control-ui/ assets
 # "gateway run" = foreground mode; all config comes from openclaw.json
