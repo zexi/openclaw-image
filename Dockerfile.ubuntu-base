@@ -51,6 +51,7 @@ RUN apt-get update \
     vim \
     iputils-ping \
     tmux \
+    ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Go (used by many skills)

@@ -52,6 +52,12 @@ mkdir -p "$STATE_DIR" "$WORKSPACE_DIR"
 mkdir -p "$STATE_DIR/agents/main/sessions" "$STATE_DIR/credentials"
 chmod 700 "$STATE_DIR"
 
+# 把 linuxbrew 移动到 /opt 目录下，启动脚本再把这个移动回来，解决 volume 挂载后 linuxbrew 目录被覆盖的问题
+if [ -d "/opt/linuxbrew" ] && [ ! -d "/home/linuxbrew" ]; then
+  echo "[entrypoint] moving linuxbrew from /opt/linuxbrew to /home/linuxbrew"
+  mv /opt/linuxbrew /home
+fi
+
 # 合并镜像内预装插件到持久化 state（首次启动时；不覆盖已有 plugins）
 if [ -d /opt/extensions ]; then
   echo "[entrypoint] copying preinstalled extensions into state dir $STATE_DIR/extensions"
