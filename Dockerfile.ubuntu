@@ -24,5 +24,12 @@ RUN chmod +x /etc/s6-overlay/s6-rc.d/svc-openclaw-gui/run \
 # 把 linuxbrew 移动到 /opt 目录下，启动脚本再把这个移动回来，解决 volume 挂载后 linuxbrew 目录被覆盖的问题
 RUN mv /home/linuxbrew /opt
 
+# 安装插件
+RUN npm install -g clawhub && apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  	poppler-utils \
+	pandoc \
+  && rm -rf /var/lib/apt/lists/*
+
 # 需要在桌面启动的时候调用这个脚本
 # ENTRYPOINT ["/app/scripts/entrypoint.sh"] 

@@ -1,6 +1,6 @@
-OPENCLAW_GIT_REF ?= v2026.3.8
-IMAGE_TAG ?= 20260312.0
-BASE_IMAGE_TAG ?= 20260311.0
+OPENCLAW_GIT_REF ?= v2026.3.11
+IMAGE_TAG ?= 20260313.1
+BASE_IMAGE_TAG ?= 20260312.0
 
 build-ubu:
 	docker buildx build --platform linux/amd64 --push \

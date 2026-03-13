@@ -7,7 +7,7 @@ log() { echo "[$(date -Iseconds)] [openclaw-open-browser] $*" | tee -a "$LOG_FIL
 
 log "script started (PID=$$, USER=$(whoami), DISPLAY=${DISPLAY:-<unset>})"
 
-URL="http://localhost:18789/?token=${OPENCLAW_GATEWAY_TOKEN:-}"
+URL="http://localhost:18789/#token=${OPENCLAW_GATEWAY_TOKEN:-}"
 
 # 如果没 token，就没必要打开浏览器
 if [ -z "${OPENCLAW_GATEWAY_TOKEN:-}" ]; then
@@ -46,10 +46,10 @@ chown -R 1000:1000 /config/.openclaw 2>&1 | tee -a "$LOG_FILE" || log "chown fai
 
 log "launching: ${BROWSER} ${URL}"
 
-# 对 chromium 系列启用最大化窗口和 no-sandbox，其他浏览器用默认参数
+# 对 chromium 系列启用最大化窗口，其他浏览器用默认参数
 case "${BROWSER}" in
   chromium|chromium-browser)
-    nohup "${BROWSER}" --no-sandbox --start-maximized "${URL}" >>"$LOG_FILE" 2>&1 &
+    nohup "${BROWSER}" --start-maximized "${URL}" >>"$LOG_FILE" 2>&1 &
     ;;
   *)
     nohup "${BROWSER}" "${URL}" >>"$LOG_FILE" 2>&1 &
