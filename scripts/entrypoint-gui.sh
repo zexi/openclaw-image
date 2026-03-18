@@ -51,6 +51,11 @@ fi
 mkdir -p "$STATE_DIR" "$WORKSPACE_DIR"
 mkdir -p "$STATE_DIR/agents/main/sessions" "$STATE_DIR/credentials"
 chmod 700 "$STATE_DIR"
+if [ -d /skills ]; then
+  echo "[entrypoint] copying skills from /skills to $WORKSPACE_DIR"
+  rsync -avP /skills "$STATE_DIR"
+  echo "[entrypoint] copied skills from /skills to $WORKSPACE_DIR"
+fi
 
 # 把 linuxbrew 移动到 /opt 目录下，启动脚本再把这个移动回来，解决 volume 挂载后 linuxbrew 目录被覆盖的问题
 if [ -d "/opt/linuxbrew" ] && [ ! -d "/home/linuxbrew" ]; then
@@ -104,7 +109,7 @@ openclaw doctor --fix 2>&1 || true
 
 # ── Workspace templates: AGENTS.md, SOUL.md, USER.md (only if missing) ───────
 write_workspace_template() {
-  local name="$1" plain_var="$2" b64_var="$3"
+  local name="$1" b64_var="$2"
   local dest="${WORKSPACE_DIR}/${name}"
   [ -f "$dest" ] && return
   local content
@@ -112,16 +117,21 @@ write_workspace_template() {
   if [ -n "${!b64_var:-}" ]; then
     content="$(printf '%s' "${!b64_var}" | base64 -d 2>/dev/null || true)"
     [ -n "$content" ] && printf '%s' "$content" > "$dest"
-  elif [ -n "${!plain_var:-}" ]; then
-    printf '%s' "${!plain_var}" > "$dest"
+    chmod 0644 "$dest" && chown 1000:1000 "$dest"
+    echo "[entrypoint] wrote workspace template: $name"
   else
     return
   fi
-  [ -f "$dest" ] && chmod 0644 "$dest" && chown 1000:1000 "$dest" && echo "[entrypoint] wrote workspace template: $name"
 }
-#write_workspace_template "AGENTS.md" "OPENCLAW_TEMPLATE_AGENTS_MD" "OPENCLAW_TEMPLATE_AGENTS_MD_B64"
-#write_workspace_template "SOUL.md"  "OPENCLAW_TEMPLATE_SOUL_MD"  "OPENCLAW_TEMPLATE_SOUL_MD_B64"
-#write_workspace_template "USER.md"  "OPENCLAW_TEMPLATE_USER_MD"  "OPENCLAW_TEMPLATE_USER_MD_B64"
+if [ -n "${OPENCLAW_TEMPLATE_AGENTS_MD_B64:-}" ]; then
+  write_workspace_template "AGENTS.md" OPENCLAW_TEMPLATE_AGENTS_MD_B64
+fi
+if [ -n "${OPENCLAW_TEMPLATE_SOUL_MD_B64:-}" ]; then
+  write_workspace_template "SOUL.md" OPENCLAW_TEMPLATE_SOUL_MD_B64
+fi
+if [ -n "${OPENCLAW_TEMPLATE_USER_MD_B64:-}" ]; then
+  write_workspace_template "USER.md" OPENCLAW_TEMPLATE_USER_MD_B64
+fi
 
 # ── Read hooks path from generated config (if hooks enabled) ─────────────────
 HOOKS_PATH=""

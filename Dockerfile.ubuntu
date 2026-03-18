@@ -5,8 +5,8 @@ FROM ${BASE_IMAGE}
 # Remove default nginx site
 # RUN rm -f /etc/nginx/sites-enabled/default
 
-COPY scripts/ /app/scripts/
-RUN chmod +x /app/scripts/*.sh
+# 把 linuxbrew 移动到 /opt 目录下，启动脚本再把这个移动回来，解决 volume 挂载后 linuxbrew 目录被覆盖的问题
+RUN mv /home/linuxbrew /opt
 
 # 使用 npm 安装 @sliverp/qqbot 插件到 /opt/extensions/qqbot
 RUN mkdir -p /opt/extensions \
@@ -16,20 +16,24 @@ RUN mkdir -p /opt/extensions \
   && mv node_modules/@sliverp/qqbot qqbot \
   && rm -rf node_modules package.json package-lock.json
 
-# 安装基于 s6-rc 的 openclaw GUI 服务定义和 XFCE 自动打开浏览器脚本
-COPY root/ /
-RUN chmod +x /etc/s6-overlay/s6-rc.d/svc-openclaw-gui/run \
-  && chmod +x /usr/local/bin/openclaw-open-browser.sh || true
-
-# 把 linuxbrew 移动到 /opt 目录下，启动脚本再把这个移动回来，解决 volume 挂载后 linuxbrew 目录被覆盖的问题
-RUN mv /home/linuxbrew /opt
-
 # 安装插件
 RUN npm install -g clawhub && apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   	poppler-utils \
 	pandoc \
+  && curl -fsSL https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/install.sh | bash  -s -- --no-skills \
   && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/config/.local/bin:${PATH}"
+RUN echo "github openai-whisper skill-vetter api-gateway summarize nano-pdf multi-search-engine self-improving-agent" | tr ' ' '\n' | xargs -I{} /config/.local/bin/skillhub install {}
+
+COPY scripts/ /app/scripts/
+RUN chmod +x /app/scripts/*.sh
+
+# 安装基于 s6-rc 的 openclaw GUI 服务定义和 XFCE 自动打开浏览器脚本
+COPY root/ /
+RUN chmod +x /etc/s6-overlay/s6-rc.d/svc-openclaw-gui/run \
+  && chmod +x /usr/local/bin/openclaw-open-browser.sh || true
 
 # 需要在桌面启动的时候调用这个脚本
 # ENTRYPOINT ["/app/scripts/entrypoint.sh"] 

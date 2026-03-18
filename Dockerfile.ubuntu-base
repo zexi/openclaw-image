@@ -52,6 +52,7 @@ RUN apt-get update \
     iputils-ping \
     tmux \
     ffmpeg \
+    rsync \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Go (used by many skills)
@@ -68,20 +69,6 @@ RUN printf '%s\n' \
   > /etc/profile.d/custom-tools.sh \
   && chmod +x /etc/profile.d/custom-tools.sh
 
-# Install under /opt/openclaw/app so that ../../ from dist/ lands at /opt/openclaw
-# which is where we place the symlinks. This avoids polluting / with project files.
-COPY --from=openclaw-build /openclaw /opt/openclaw/app
-
-RUN printf '%s\n' '#!/usr/bin/env bash' 'exec node /opt/openclaw/app/openclaw.mjs "$@"' > /usr/local/bin/openclaw \
-  && chmod +x /usr/local/bin/openclaw
-
-# Compiled JS in dist/ resolves ../../ relative to import.meta.url.
-# Files in /opt/openclaw/app/dist/ resolve ../../ to /opt/openclaw/.
-# Symlink docs/assets/package.json there so the paths work.
-RUN ln -s /opt/openclaw/app/docs /opt/openclaw/docs \
-  && ln -s /opt/openclaw/app/assets /opt/openclaw/assets \
-  && ln -s /opt/openclaw/app/package.json /opt/openclaw/package.json
-
 # Install Linuxbrew (installer refuses to run as root, so use a temp user)
 RUN useradd -m -s /bin/bash linuxbrew \
   && mkdir -p /home/linuxbrew/.linuxbrew \
@@ -97,3 +84,18 @@ ENV HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew" \
     HOMEBREW_CELLAR="/home/linuxbrew/.linuxbrew/Cellar" \
     HOMEBREW_REPOSITORY="/home/linuxbrew/.linuxbrew/Homebrew" \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
+
+# Install under /opt/openclaw/app so that ../../ from dist/ lands at /opt/openclaw
+# which is where we place the symlinks. This avoids polluting / with project files.
+COPY --from=openclaw-build /openclaw /opt/openclaw/app
+
+RUN printf '%s\n' '#!/usr/bin/env bash' 'exec node /opt/openclaw/app/openclaw.mjs "$@"' > /usr/local/bin/openclaw \
+  && chmod +x /usr/local/bin/openclaw
+
+# Compiled JS in dist/ resolves ../../ relative to import.meta.url.
+# Files in /opt/openclaw/app/dist/ resolve ../../ to /opt/openclaw/.
+# Symlink docs/assets/package.json there so the paths work.
+RUN ln -s /opt/openclaw/app/docs /opt/openclaw/docs \
+  && ln -s /opt/openclaw/app/assets /opt/openclaw/assets \
+  && ln -s /opt/openclaw/app/package.json /opt/openclaw/package.json
+
