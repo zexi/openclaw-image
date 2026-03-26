@@ -49,7 +49,7 @@ log "launching: ${BROWSER} ${URL}"
 # 对 chromium 系列启用最大化窗口，其他浏览器用默认参数
 case "${BROWSER}" in
   chromium|chromium-browser)
-    nohup "${BROWSER}" --start-maximized "${URL}" >>"$LOG_FILE" 2>&1 &
+    nohup "${BROWSER}" --no-sandbox --start-maximized "${URL}" >>"$LOG_FILE" 2>&1 &
     ;;
   *)
     nohup "${BROWSER}" "${URL}" >>"$LOG_FILE" 2>&1 &

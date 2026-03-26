@@ -31,6 +31,9 @@ COPY scripts/ /app/scripts/
 RUN chmod +x /app/scripts/*.sh
 
 # 安装基于 s6-rc 的 openclaw GUI 服务定义和 XFCE 自动打开浏览器脚本
+RUN mkdir -p /etc/chromium.d && \
+    echo 'export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --no-sandbox"' > /etc/chromium.d/no-sandbox
+
 COPY root/ /
 RUN chmod +x /etc/s6-overlay/s6-rc.d/svc-openclaw-gui/run \
   && chmod +x /usr/local/bin/openclaw-open-browser.sh || true

@@ -582,7 +582,7 @@ if (process.env.FEISHU_APP_ID && process.env.FEISHU_APP_SECRET) {
   if (process.env.FEISHU_BOT_NAME) feishu.accounts.main.botName = process.env.FEISHU_BOT_NAME;
 
   if (process.env.FEISHU_DOMAIN) feishu.domain = process.env.FEISHU_DOMAIN.trim();
-  if (process.env.FEISHU_DM_POLICY) feishu.dmPolicy = process.env.FEISHU_DM_POLICY;
+  if (process.env.FEISHU_DM_POLICY) feishu.accounts.main.dmPolicy = process.env.FEISHU_DM_POLICY;
   if (process.env.FEISHU_GROUP_POLICY) feishu.groupPolicy = process.env.FEISHU_GROUP_POLICY;
   if (process.env.FEISHU_ALLOW_FROM)
     feishu.allowFrom = process.env.FEISHU_ALLOW_FROM.split(",").map(s => s.trim());
