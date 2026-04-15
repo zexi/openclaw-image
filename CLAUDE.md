@@ -68,6 +68,12 @@ Gate: `QQBOT_APP_ID` + `QQBOT_CLIENT_SECRET` (both required to activate).
 
 Strings: `QQBOT_APP_ID`, `QQBOT_CLIENT_SECRET`
 
+### Vivgrid env vars (2 total)
+
+Gate: `VIVGRID_API_KEY` (required to activate).
+
+Strings: `VIVGRID_API_KEY`, `VIVGRID_BASE_URL`
+
 ### Hooks env vars (3 total)
 
 Gate: `HOOKS_ENABLED=true` (required to activate).

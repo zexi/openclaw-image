@@ -251,6 +251,30 @@ if (process.env.SYNTHETIC_API_KEY) {
   removeProvider("synthetic", "Synthetic", "SYNTHETIC_API_KEY");
 }
 
+// Vivgrid (OpenAI-compatible)
+if (process.env.VIVGRID_API_KEY) {
+  console.log("[configure] configuring Vivgrid provider");
+  ensure(config, "models", "providers");
+  config.models.providers.vivgrid = {
+    api: "openai-completions",
+    apiKey: process.env.VIVGRID_API_KEY,
+    baseUrl: (process.env.VIVGRID_BASE_URL || "https://api.vivgrid.com/v1").replace(/\/+$/, ""),
+    models: [
+      {
+        id: "auto",
+        name: "auto",
+        reasoning: false,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 128000,
+        maxTokens: 8192,
+      },
+    ],
+  };
+} else {
+  removeProvider("vivgrid", "Vivgrid", "VIVGRID_API_KEY");
+}
+
 // Xiaomi MiMo (Anthropic-compatible)
 if (process.env.XIAOMI_API_KEY) {
   console.log("[configure] configuring Xiaomi MiMo provider");
@@ -339,6 +363,7 @@ const primaryCandidates = [
   [process.env.SYNTHETIC_API_KEY,      "synthetic/hf:MiniMaxAI/MiniMax-M2.1"],
   [process.env.ZAI_API_KEY,            "zai/glm-4.7"],
   [process.env.AI_GATEWAY_API_KEY,     "vercel-ai-gateway/anthropic/claude-opus-4.5"],
+  [process.env.VIVGRID_API_KEY,        "vivgrid/auto"],
   [process.env.XIAOMI_API_KEY,         "xiaomi/mimo-v2-flash"],
   [process.env.AWS_ACCESS_KEY_ID,      "amazon-bedrock/anthropic.claude-opus-4-5-20251101-v1:0"],
   [ollamaUrl,                          "ollama/llama3.3"],
@@ -661,7 +686,8 @@ const hasProvider =
   // Custom proxy providers also need env var keys
   !!process.env.VENICE_API_KEY || !!process.env.MINIMAX_API_KEY ||
   !!process.env.MOONSHOT_API_KEY || !!process.env.KIMI_API_KEY ||
-  !!process.env.SYNTHETIC_API_KEY || !!process.env.XIAOMI_API_KEY;
+  !!process.env.SYNTHETIC_API_KEY || !!process.env.XIAOMI_API_KEY ||
+  !!process.env.VIVGRID_API_KEY;
 
 if (!hasProvider) {
   console.error("[configure] ERROR: No AI provider API key set.");
@@ -669,7 +695,7 @@ if (!hasProvider) {
   console.error("[configure] Set one of: ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY,");
   console.error("[configure]   XAI_API_KEY, GROQ_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY, ZAI_API_KEY,");
   console.error("[configure]   AI_GATEWAY_API_KEY, OPENCODE_API_KEY, COPILOT_GITHUB_TOKEN, VENICE_API_KEY,");
-  console.error("[configure]   MOONSHOT_API_KEY, KIMI_API_KEY, MINIMAX_API_KEY, SYNTHETIC_API_KEY, XIAOMI_API_KEY,");
+  console.error("[configure]   MOONSHOT_API_KEY, KIMI_API_KEY, MINIMAX_API_KEY, SYNTHETIC_API_KEY, XIAOMI_API_KEY, VIVGRID_API_KEY,");
   console.error("[configure]   AWS_ACCESS_KEY_ID+AWS_SECRET_ACCESS_KEY (Bedrock), or OLLAMA_BASE_URL (local)");
   process.exit(1);
 }

@@ -120,8 +120,9 @@ Triggers: `schedule: '0 */6 * * *'` + `workflow_dispatch` (version, force_rebuil
 | `SYNTHETIC_API_KEY` | Synthetic API key (Anthropic-compatible). |
 | `COPILOT_GITHUB_TOKEN` | GitHub Copilot token. Configures Claude models via GitHub. |
 | `XIAOMI_API_KEY` | Xiaomi MiMo API key (Anthropic-compatible). Configures MiMo v2 Flash. |
+| `VIVGRID_API_KEY` | Vivgrid API key (OpenAI-compatible). Configures auto model. |
 
-Multiple providers can be set simultaneously. Priority for primary model: Anthropic > OpenAI > OpenRouter > Gemini > OpenCode > GitHub Copilot > xAI > Groq > Mistral > Cerebras > Venice > Moonshot > Kimi > MiniMax > Synthetic > ZAI > AI Gateway > Xiaomi > Bedrock > Ollama.
+Multiple providers can be set simultaneously. Priority for primary model: Anthropic > OpenAI > OpenRouter > Gemini > OpenCode > GitHub Copilot > xAI > Groq > Mistral > Cerebras > Venice > Moonshot > Kimi > MiniMax > Synthetic > ZAI > AI Gateway > Xiaomi > Vivgrid > Bedrock > Ollama.
 
 If a provider env var is removed, that provider section is cleaned from `openclaw.json` on next start.
 
