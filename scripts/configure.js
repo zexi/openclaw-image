@@ -344,6 +344,25 @@ if (ollamaUrl) {
   removeProvider("ollama", "Ollama", "OLLAMA_BASE_URL");
 }
 
+// vLLM (OpenAI-compatible)
+const vllmUrl = (process.env.VLLM_BASE_URL || "").trim().replace(/\/+$/, "");
+if (vllmUrl) {
+  console.log("[configure] configuring vLLM provider");
+  ensure(config, "models", "providers");
+  const base = vllmUrl.endsWith("/v1") ? vllmUrl : `${vllmUrl}/v1`;
+  const apiKey = (process.env.VLLM_API_KEY || "").trim() || "vllm-local";
+  config.models.providers.vllm = {
+    api: "openai-completions",
+    apiKey,
+    baseUrl: base,
+    models: [
+      { id: "model", name: "vLLM Model", contextWindow: 128000 },
+    ],
+  };
+} else {
+  removeProvider("vllm", "vLLM", "VLLM_BASE_URL");
+}
+
 // ── Primary model selection (first available provider wins) ─────────────────
 const primaryCandidates = [
   [process.env.ANTHROPIC_API_KEY,      "anthropic/claude-opus-4-5-20251101"],
@@ -683,6 +702,7 @@ const hasProvider =
   !!opencodeKey ||
   !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
   !!ollamaUrl ||
+  !!vllmUrl ||
   // Custom proxy providers also need env var keys
   !!process.env.VENICE_API_KEY || !!process.env.MINIMAX_API_KEY ||
   !!process.env.MOONSHOT_API_KEY || !!process.env.KIMI_API_KEY ||
@@ -696,7 +716,7 @@ if (!hasProvider) {
   console.error("[configure]   XAI_API_KEY, GROQ_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY, ZAI_API_KEY,");
   console.error("[configure]   AI_GATEWAY_API_KEY, OPENCODE_API_KEY, COPILOT_GITHUB_TOKEN, VENICE_API_KEY,");
   console.error("[configure]   MOONSHOT_API_KEY, KIMI_API_KEY, MINIMAX_API_KEY, SYNTHETIC_API_KEY, XIAOMI_API_KEY, VIVGRID_API_KEY,");
-  console.error("[configure]   AWS_ACCESS_KEY_ID+AWS_SECRET_ACCESS_KEY (Bedrock), or OLLAMA_BASE_URL (local)");
+  console.error("[configure]   AWS_ACCESS_KEY_ID+AWS_SECRET_ACCESS_KEY (Bedrock), OLLAMA_BASE_URL (local), or VLLM_BASE_URL (vLLM)");
   process.exit(1);
 }
 
