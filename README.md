@@ -122,7 +122,7 @@ Triggers: `schedule: '0 */6 * * *'` + `workflow_dispatch` (version, force_rebuil
 | `XIAOMI_API_KEY` | Xiaomi MiMo API key (Anthropic-compatible). Configures MiMo v2 Flash. |
 | `VIVGRID_API_KEY` | Vivgrid API key (OpenAI-compatible). Configures auto model. |
 
-Multiple providers can be set simultaneously. Priority for primary model: Anthropic > OpenAI > OpenRouter > Gemini > OpenCode > GitHub Copilot > xAI > Groq > Mistral > Cerebras > Venice > Moonshot > Kimi > MiniMax > Synthetic > ZAI > AI Gateway > Xiaomi > Vivgrid > Bedrock > Ollama.
+Multiple providers can be set simultaneously. Priority for auto-selected primary model: Anthropic > OpenAI > OpenRouter > Gemini > OpenCode > GitHub Copilot > xAI > Groq > Mistral > Cerebras > Venice > Moonshot > Kimi > MiniMax > Synthetic > ZAI > AI Gateway > Xiaomi > Vivgrid > Bedrock > Ollama. vLLM uses the same env-driven config flow, but if you want it to become the default text model you should set `OPENCLAW_PRIMARY_MODEL=vllm/...` explicitly.
 
 If a provider env var is removed, that provider section is cleaned from `openclaw.json` on next start.
 
@@ -148,11 +148,28 @@ If a provider env var is removed, that provider section is cleaned from `opencla
 |---|---|
 | `OLLAMA_BASE_URL` | Ollama server URL (e.g. `http://host.docker.internal:11434`). Enables Ollama provider when set. |
 
+### vLLM (custom OpenAI-compatible endpoint)
+
+| Variable | Description |
+|---|---|
+| `VLLM_BASE_URL` | vLLM server URL (e.g. `http://host.docker.internal:8000`). Accepts either `http://host:8000` or `http://host:8000/v1`; the generated config appends `/v1` automatically when needed. |
+| `VLLM_API_KEY` | Optional API key written to `models.providers.vllm.apiKey`. Defaults to `vllm-local` when `VLLM_BASE_URL` is set. |
+
+When `VLLM_BASE_URL` is present, `scripts/configure.js` generates `models.providers.vllm` directly from env vars. This flow does not depend on `OPENCLAW_CUSTOM_CONFIG`.
+
+Example:
+
+```bash
+VLLM_BASE_URL=http://10.255.255.253:8000
+VLLM_API_KEY=vllm-local
+OPENCLAW_PRIMARY_MODEL=vllm/Qwen3-32B
+```
+
 ### Model selection
 
 | Variable | Description |
 |---|---|
-| `OPENCLAW_PRIMARY_MODEL` | Override auto-selected primary model. Format: `provider/model-id` (e.g. `anthropic/claude-sonnet-4-5-20250929`). |
+| `OPENCLAW_PRIMARY_MODEL` | Override auto-selected primary model. Format: `provider/model-id` (e.g. `anthropic/claude-sonnet-4-5-20250929` or `vllm/Qwen3-32B`). |
 
 ### HTTP Basic Auth (recommended)
 

@@ -13,6 +13,14 @@ echo "[entrypoint] workspace dir: $WORKSPACE_DIR"
 echo "[entrypoint] setting up persistent tool storage in /data..."
 mkdir -p "$NPM_CONFIG_PREFIX/bin" "$UV_TOOL_DIR/bin" "$UV_CACHE_DIR" "$GOPATH/bin"
 
+# Restore linuxbrew moved into /opt at build time before wiring persistence.
+if [ -d "/opt/linuxbrew" ] && [ ! -d "/home/linuxbrew" ]; then
+    echo "[entrypoint] moving linuxbrew from /opt/linuxbrew to /home/linuxbrew"
+    mv /opt/linuxbrew /home
+fi
+mkdir -p /home/linuxbrew
+chown linuxbrew:linuxbrew /home/linuxbrew
+
 # Linuxbrew persistence and symlinking
 BREW_PERSIST_DIR="/data/linuxbrew"
 if [ ! -d "$BREW_PERSIST_DIR" ]; then
@@ -84,6 +92,7 @@ for key in ANTHROPIC_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY \
 done
 [ -n "${AWS_ACCESS_KEY_ID:-}" ] && [ -n "${AWS_SECRET_ACCESS_KEY:-}" ] && HAS_PROVIDER=1
 [ -n "${OLLAMA_BASE_URL:-}" ] && HAS_PROVIDER=1
+[ -n "${VLLM_BASE_URL:-}" ] && HAS_PROVIDER=1
 if [ "$HAS_PROVIDER" -eq 0 ]; then
   echo "[entrypoint] ERROR: At least one AI provider API key env var is required."
   echo "[entrypoint] Providers read API keys from env vars, never from the JSON config."
@@ -91,7 +100,7 @@ if [ "$HAS_PROVIDER" -eq 0 ]; then
   echo "[entrypoint]   XAI_API_KEY, GROQ_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY, VENICE_API_KEY,"
   echo "[entrypoint]   MOONSHOT_API_KEY, KIMI_API_KEY, MINIMAX_API_KEY, ZAI_API_KEY, AI_GATEWAY_API_KEY,"
   echo "[entrypoint]   OPENCODE_API_KEY, SYNTHETIC_API_KEY, COPILOT_GITHUB_TOKEN, XIAOMI_API_KEY, VIVGRID_API_KEY"
-  echo "[entrypoint] Or: AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (Bedrock), OLLAMA_BASE_URL (local)"
+  echo "[entrypoint] Or: AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (Bedrock), OLLAMA_BASE_URL (local), VLLM_BASE_URL (vLLM)"
   exit 1
 fi
 
@@ -135,16 +144,21 @@ openclaw doctor --fix 2>&1 || true
 write_workspace_template() {
   local name="$1" plain_var="$2" b64_var="$3"
   local dest="${WORKSPACE_DIR}/${name}"
-  [ -f "$dest" ] && return
+  [ -f "$dest" ] && return 0
   local content
-  if [ -n "${b64_var:-}" ]; then
-    content="$(printf '%s' "${!b64_var}" | base64 -d 2>/dev/null)" && [ -n "$content" ] && printf '%s' "$content" > "$dest"
-  elif [ -n "${plain_var:-}" ]; then
+  if [ -n "${!b64_var:-}" ]; then
+    content="$(printf '%s' "${!b64_var}" | base64 -d 2>/dev/null || true)"
+    [ -n "$content" ] || return 0
+    printf '%s' "$content" > "$dest"
+  elif [ -n "${!plain_var:-}" ]; then
     printf '%s' "${!plain_var}" > "$dest"
   else
-    return
+    return 0
   fi
-  [ -f "$dest" ] && chmod 0644 "$dest" && echo "[entrypoint] wrote workspace template: $name"
+  if [ -f "$dest" ]; then
+    chmod 0644 "$dest"
+    echo "[entrypoint] wrote workspace template: $name"
+  fi
 }
 write_workspace_template "AGENTS.md" "OPENCLAW_TEMPLATE_AGENTS_MD" "OPENCLAW_TEMPLATE_AGENTS_MD_B64"
 write_workspace_template "SOUL.md"  "OPENCLAW_TEMPLATE_SOUL_MD"  "OPENCLAW_TEMPLATE_SOUL_MD_B64"
@@ -347,7 +361,11 @@ rm -f "$STATE_DIR/gateway.lock" 2>/dev/null || true
 # ── Start openclaw gateway ───────────────────────────────────────────────────
 echo "[entrypoint] starting openclaw gateway on port $GATEWAY_PORT..."
 
+echo "[entrypoint] setting ownership of state and workspace directories..."
+chown -R 1000:1000 "$STATE_DIR"
+chown -R 1000:1000 "$WORKSPACE_DIR"
+
 # cwd must be the app root so the gateway finds dist/control-ui/ assets
 # "gateway run" = foreground mode; all config comes from openclaw.json
 cd /opt/openclaw/app
-exec openclaw gateway run
+exec setpriv --clear-groups --reuid=1000 --regid=1000 -- openclaw gateway run

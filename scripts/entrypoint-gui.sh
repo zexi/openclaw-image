@@ -38,6 +38,7 @@ for key in ANTHROPIC_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY GEMINI_API_KEY \
 done
 [ -n "${AWS_ACCESS_KEY_ID:-}" ] && [ -n "${AWS_SECRET_ACCESS_KEY:-}" ] && HAS_PROVIDER=1
 [ -n "${OLLAMA_BASE_URL:-}" ] && HAS_PROVIDER=1
+[ -n "${VLLM_BASE_URL:-}" ] && HAS_PROVIDER=1
 if [ "$HAS_PROVIDER" -eq 0 ]; then
   echo "[entrypoint] ERROR: At least one AI provider API key env var is required."
   echo "[entrypoint] Providers read API keys from env vars, never from the JSON config."
@@ -45,7 +46,7 @@ if [ "$HAS_PROVIDER" -eq 0 ]; then
   echo "[entrypoint]   XAI_API_KEY, GROQ_API_KEY, MISTRAL_API_KEY, CEREBRAS_API_KEY, VENICE_API_KEY,"
   echo "[entrypoint]   MOONSHOT_API_KEY, KIMI_API_KEY, MINIMAX_API_KEY, ZAI_API_KEY, AI_GATEWAY_API_KEY,"
   echo "[entrypoint]   OPENCODE_API_KEY, SYNTHETIC_API_KEY, COPILOT_GITHUB_TOKEN, XIAOMI_API_KEY, VIVGRID_API_KEY"
-  echo "[entrypoint] Or: AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (Bedrock), OLLAMA_BASE_URL (local)"
+  echo "[entrypoint] Or: AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (Bedrock), OLLAMA_BASE_URL (local), VLLM_BASE_URL (vLLM)"
   exit 1
 fi
 
